@@ -25,7 +25,12 @@ final class Preset
 
     public function match(string $nodeType, string $propertyName): bool
     {
-        return isset($this->mapping[$nodeType]) && $this->mapping[$nodeType] === $propertyName;
+        foreach ($this->mapping as $mapping) {
+            if (isset($mapping[$nodeType]) && $mapping[$nodeType] === $propertyName) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public function mapping(string $nodeType, string $propertyName): array
@@ -33,6 +38,13 @@ final class Preset
         if (!$this->match($nodeType, $propertyName)) {
             throw new Exception(sprintf('No mapping found for the give parameter "%s@%s"', $nodeType, $propertyName), 1506528477);
         }
-        return $this->mapping;
+        $filteredMapping = [];
+        foreach ($this->mapping as $mapping) {
+            if (isset($mapping[$nodeType]) && $mapping[$nodeType] === $propertyName) {
+                continue;
+            }
+            $filteredMapping[] = $mapping;
+        }
+        return $filteredMapping;
     }
 }
