@@ -1,0 +1,20 @@
+{
+    "name": "ttree/crossreference",
+    "description": "Helper package to manage Node cross references (bidirectional references) in your Neos CMS project",
+    "type": "neos-package",
+    "license": "MIT",
+    "require": {
+        "php": "^7.1",
+        "neos/neos": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ttree\\CrossReference\\": "Classes/"
+        }
+    },
+    "extra": {
+        "neos": {
+            "package-key": "Ttree.CrossReference"
+        }
+    }
+}

@@ -1,0 +1,10 @@
+Ttree:
+  CrossReference:
+    presets:
+      Hsso.Website:Document.Table:
+        enabled: true
+        mapping:
+          -
+            Hsso.Website:Document.Table: basedOn
+          -
+            Hsso.Website:Document.Table: derivedBy
