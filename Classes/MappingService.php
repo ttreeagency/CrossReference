@@ -42,7 +42,7 @@ final class MappingService
 
     public function process(NodeInterface $node, string $propertyName, $oldValue, $newValue): void
     {
-        if (!$this->enabled || !$this->isOfReferenceTypes($node, $propertyName) || !$this->isValidSourceValue($newValue) || !$this->match($node->getNodeType()->getName(), $propertyName)) {
+        if ($this->skip($node, $propertyName, $oldValue, $newValue)) {
             return;
         }
 
@@ -57,7 +57,7 @@ final class MappingService
         foreach ($newValue as $targetNode) {
             $this->systemLogger->log(vsprintf('Cross reference started in node "%s" in %s (%s)', [
                 $node->getLabel(),
-                $node->getContextPath(),
+                $node->getIdentifier(),
                 $node->getNodeType()
             ]), \LOG_DEBUG, null, 'Ttree.CrossReference');
 
@@ -69,7 +69,7 @@ final class MappingService
         foreach ($removedValue as $targetNode) {
             $this->systemLogger->log(vsprintf('Cross unreference started in node "%s" in %s (%s)', [
                 $node->getLabel(),
-                $node->getContextPath(),
+                $node->getIdentifier(),
                 $node->getNodeType()
             ]), \LOG_DEBUG, null, 'Ttree.CrossReference');
 
@@ -77,6 +77,32 @@ final class MappingService
 
             $this->crossReference($mappings, $node, $targetNode, true);
         }
+    }
+
+    protected function skip(NodeInterface $node, string $propertyName, $oldValue, $newValue) :bool
+    {
+        $message = function(string $message) use ($propertyName, $node) {
+            return \sprintf($message, $propertyName, $node->getIdentifier(), $node->getNodeType()->getName());
+        };
+
+        if (!$this->enabled) {
+            $this->systemLogger->log($message('Cross Reference skipped, feature disabled for property "%s" in "%s" (%s)'), \LOG_DEBUG, null, 'Ttree.CrossReference');
+            return true;
+        }
+        if (!$this->isOfReferenceTypes($node, $propertyName)) {
+            $this->systemLogger->log($message('Cross Reference skipped, property "%s" in "%s" (%s) is not a reference(s)'), \LOG_DEBUG, null, 'Ttree.CrossReference');
+            return true;
+        }
+        if (!$this->isValidSourceValue($newValue)) {
+            $this->systemLogger->log($message('Cross Reference skipped, property "%s" in "%s" (%s) is not a valid source'), \LOG_DEBUG, null, 'Ttree.CrossReference');
+            return true;
+        }
+        if (!$this->match($node->getNodeType()->getName(), $propertyName)) {
+            $this->systemLogger->log($message('Cross Reference skipped, property "%s" in "%s" (%s) is not covered by a preset'), \LOG_DEBUG, null, 'Ttree.CrossReference');
+            return true;
+        }
+
+        return false;
     }
 
     protected function normalizeValue($value): array
@@ -103,7 +129,7 @@ final class MappingService
                     $this->systemLogger->log(vsprintf('Cross reference to "%s" of type %s (%s) skipped, wrong Node Type "%s"', [
                         $targetNode->getLabel(),
                         $targetNode->getNodeType(),
-                        $targetNode->getContextPath(),
+                        $targetNode->getIdentifier(),
                         $targetNodeType
                     ]), \LOG_DEBUG, null, 'Ttree.CrossReference');
                     continue;
@@ -114,7 +140,7 @@ final class MappingService
                     $this->systemLogger->log(vsprintf('Cross reference to "%s" of type %s (%s) skipped, property "%s" is not of type "references"', [
                         $targetNode->getLabel(),
                         $targetNode->getNodeType(),
-                        $targetNode->getContextPath(),
+                        $targetNode->getIdentifier(),
                         $targetPropertyName
                     ]), \LOG_DEBUG, null, 'Ttree.CrossReference');
                     continue;
@@ -133,9 +159,9 @@ final class MappingService
                     });
                     $this->systemLogger->log(vsprintf('Cross reference unsetted from node "%s" (%s) to "%s" (%s)', [
                         $sourceNode->getLabel(),
-                        $sourceNode->getContextPath(),
+                        $sourceNode->getIdentifier(),
                         $targetNode->getLabel(),
-                        $targetNode->getContextPath()
+                        $targetNode->getIdentifier()
                     ]), \LOG_DEBUG, null, 'Ttree.CrossReference');
                 } else {
                     $values[] = $sourceNode->getIdentifier();
@@ -144,9 +170,9 @@ final class MappingService
                     });
                     $this->systemLogger->log(vsprintf('Cross reference setted from node "%s" (%s) to "%s" (%s)', [
                         $sourceNode->getLabel(),
-                        $sourceNode->getContextPath(),
+                        $sourceNode->getIdentifier(),
                         $targetNode->getLabel(),
-                        $targetNode->getContextPath()
+                        $targetNode->getIdentifier()
                     ]), \LOG_DEBUG, null, 'Ttree.CrossReference');
                 }
             }
