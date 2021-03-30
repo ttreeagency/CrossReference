@@ -3,7 +3,7 @@ namespace Ttree\CrossReference;
 
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\Flow\Annotations as Flow;
-use Neos\Flow\Log\SystemLoggerInterface;
+use Neos\Flow\Log\PsrSystemLoggerInterface;
 use Ttree\CrossReference\Domain\Model\Preset;
 
 /**
@@ -12,7 +12,7 @@ use Ttree\CrossReference\Domain\Model\Preset;
 final class MappingService
 {
     /**
-     * @var SystemLoggerInterface
+     * @var PsrSystemLoggerInterface
      * @Flow\Inject
      */
     protected $systemLogger;
@@ -55,11 +55,11 @@ final class MappingService
 
         /** @var NodeInterface $targetNode */
         foreach ($newValue as $targetNode) {
-            $this->systemLogger->log(vsprintf('Cross reference started in node "%s" in %s (%s)', [
+            $this->systemLogger->debug(vsprintf('MappingService::Cross reference started in node "%s" in %s (%s)', [
                 $node->getLabel(),
                 $node->getIdentifier(),
                 $node->getNodeType()
-            ]), \LOG_DEBUG, null, 'Ttree.CrossReference');
+            ]));
 
             $mappings = $this->mapping($node->getNodeType()->getName(), $propertyName);
 
@@ -67,11 +67,11 @@ final class MappingService
         }
 
         foreach ($removedValue as $targetNode) {
-            $this->systemLogger->log(vsprintf('Cross unreference started in node "%s" in %s (%s)', [
+            $this->systemLogger->debug(vsprintf('MappingService::Cross unreference started in node "%s" in %s (%s)', [
                 $node->getLabel(),
                 $node->getIdentifier(),
                 $node->getNodeType()
-            ]), \LOG_DEBUG, null, 'Ttree.CrossReference');
+            ]));
 
             $mappings = $this->mapping($node->getNodeType()->getName(), $propertyName);
 
@@ -86,19 +86,19 @@ final class MappingService
         };
 
         if (!$this->enabled) {
-            $this->systemLogger->log($message('Cross Reference skipped, feature disabled for property "%s" in "%s" (%s)'), \LOG_DEBUG, null, 'Ttree.CrossReference');
+            $this->systemLogger->debug($message('MappingService::Cross Reference skipped, feature disabled for property "%s" in "%s" (%s)'));
             return true;
         }
         if (!$this->isOfReferenceTypes($node, $propertyName)) {
-            $this->systemLogger->log($message('Cross Reference skipped, property "%s" in "%s" (%s) is not a reference(s)'), \LOG_DEBUG, null, 'Ttree.CrossReference');
+            $this->systemLogger->debug($message('MappingService::Cross Reference skipped, property "%s" in "%s" (%s) is not a reference(s)'));
             return true;
         }
         if (!$this->isValidSourceValue($newValue)) {
-            $this->systemLogger->log($message('Cross Reference skipped, property "%s" in "%s" (%s) is not a valid source'), \LOG_DEBUG, null, 'Ttree.CrossReference');
+            $this->systemLogger->debug($message('MappingService::Cross Reference skipped, property "%s" in "%s" (%s) is not a valid source'));
             return true;
         }
         if (!$this->match($node->getNodeType()->getName(), $propertyName)) {
-            $this->systemLogger->log($message('Cross Reference skipped, property "%s" in "%s" (%s) is not covered by a preset'), \LOG_DEBUG, null, 'Ttree.CrossReference');
+            $this->systemLogger->debug($message('MappingService::Cross Reference skipped, property "%s" in "%s" (%s) is not covered by a preset'));
             return true;
         }
 
@@ -126,23 +126,23 @@ final class MappingService
         foreach ($mappings as $mapping) {
             foreach ($mapping as $targetNodeType => $targetPropertyName) {
                 if (!$targetNode->getNodeType()->isOfType($targetNodeType)) {
-                    $this->systemLogger->log(vsprintf('Cross reference to "%s" of type %s (%s) skipped, wrong Node Type "%s"', [
+                    $this->systemLogger->debug(vsprintf('MappingService::Cross reference to "%s" of type %s (%s) skipped, wrong Node Type "%s"', [
                         $targetNode->getLabel(),
                         $targetNode->getNodeType(),
                         $targetNode->getIdentifier(),
                         $targetNodeType
-                    ]), \LOG_DEBUG, null, 'Ttree.CrossReference');
+                    ]));
                     continue;
                 }
 
                 $targetPropertyType = $targetNode->getNodeType()->getConfiguration('properties.' . $targetPropertyName . '.type');
                 if ($targetPropertyType !== 'references') {
-                    $this->systemLogger->log(vsprintf('Cross reference to "%s" of type %s (%s) skipped, property "%s" is not of type "references"', [
+                    $this->systemLogger->debug(vsprintf('MappingService::Cross reference to "%s" of type %s (%s) skipped, property "%s" is not of type "references"', [
                         $targetNode->getLabel(),
                         $targetNode->getNodeType(),
                         $targetNode->getIdentifier(),
                         $targetPropertyName
-                    ]), \LOG_DEBUG, null, 'Ttree.CrossReference');
+                    ]));
                     continue;
                 }
 
@@ -157,23 +157,23 @@ final class MappingService
                     $this->withoutCrossReferenceMapping(function () use ($targetNode, $targetPropertyName, $values) {
                         $targetNode->setProperty($targetPropertyName, \array_unique($values));
                     });
-                    $this->systemLogger->log(vsprintf('Cross reference unsetted from node "%s" (%s) to "%s" (%s)', [
+                    $this->systemLogger->debug(vsprintf('MappingService::Cross reference unsetted from node "%s" (%s) to "%s" (%s)', [
                         $sourceNode->getLabel(),
                         $sourceNode->getIdentifier(),
                         $targetNode->getLabel(),
                         $targetNode->getIdentifier()
-                    ]), \LOG_DEBUG, null, 'Ttree.CrossReference');
+                    ]));
                 } else {
                     $values[] = $sourceNode->getIdentifier();
                     $this->withoutCrossReferenceMapping(function () use ($targetNode, $targetPropertyName, $values) {
                         $targetNode->setProperty($targetPropertyName, \array_unique($values));
                     });
-                    $this->systemLogger->log(vsprintf('Cross reference setted from node "%s" (%s) to "%s" (%s)', [
+                    $this->systemLogger->debug(vsprintf('MappingService::Cross reference setted from node "%s" (%s) to "%s" (%s)', [
                         $sourceNode->getLabel(),
                         $sourceNode->getIdentifier(),
                         $targetNode->getLabel(),
                         $targetNode->getIdentifier()
-                    ]), \LOG_DEBUG, null, 'Ttree.CrossReference');
+                    ]));
                 }
             }
         }
@@ -191,12 +191,14 @@ final class MappingService
 
     protected function mapping(string $nodeType, string $propertyName): array
     {
+
         $mapping = [];
         foreach ($this->presets as $preset) {
             if ($preset->match($nodeType, $propertyName)) {
                 $mapping = \array_merge($mapping, $preset->mapping($nodeType, $propertyName));
             }
         }
+
         return $mapping;
     }
 
