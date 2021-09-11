@@ -1,7 +1,9 @@
 <?php
 namespace Ttree\CrossReference;
 
+use Google\Service\TPU\Node;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
+use Neos\ContentRepository\Domain\Model\NodeType;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Log\PsrSystemLoggerInterface;
 use Ttree\CrossReference\Domain\Model\Preset;
@@ -61,7 +63,7 @@ final class MappingService
                 $node->getNodeType()
             ]));
 
-            $mappings = $this->mapping($node->getNodeType()->getName(), $propertyName);
+            $mappings = $this->mapping($node->getNodeType(), $propertyName);
 
             $this->crossReference($mappings, $node, $targetNode);
         }
@@ -73,7 +75,7 @@ final class MappingService
                 $node->getNodeType()
             ]));
 
-            $mappings = $this->mapping($node->getNodeType()->getName(), $propertyName);
+            $mappings = $this->mapping($node->getNodeType(), $propertyName);
 
             $this->crossReference($mappings, $node, $targetNode, true);
         }
@@ -97,7 +99,7 @@ final class MappingService
             $this->systemLogger->debug($message('MappingService::Cross Reference skipped, property "%s" in "%s" (%s) is not a valid source'));
             return true;
         }
-        if (!$this->match($node->getNodeType()->getName(), $propertyName)) {
+        if (!$this->match($node->getNodeType(), $propertyName)) {
             $this->systemLogger->debug($message('MappingService::Cross Reference skipped, property "%s" in "%s" (%s) is not covered by a preset'));
             return true;
         }
@@ -179,7 +181,7 @@ final class MappingService
         }
     }
 
-    protected function match(string $nodeType, string $propertyName): bool
+    protected function match(NodeType $nodeType, string $propertyName): bool
     {
         foreach ($this->presets as $preset) {
             if ($preset->match($nodeType, $propertyName)) {
@@ -189,7 +191,7 @@ final class MappingService
         return false;
     }
 
-    protected function mapping(string $nodeType, string $propertyName): array
+    protected function mapping(NodeType $nodeType, string $propertyName): array
     {
 
         $mapping = [];
