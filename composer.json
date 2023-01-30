@@ -4,7 +4,7 @@
     "type": "neos-package",
     "license": "MIT",
     "require": {
-        "neos/neos": "^5.3"
+        "neos/neos": "^5.3 || ^7 || ^8" 
     },
     "autoload": {
         "psr-4": {
