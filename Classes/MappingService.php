@@ -5,7 +5,7 @@ use Google\Service\TPU\Node;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\ContentRepository\Domain\Model\NodeType;
 use Neos\Flow\Annotations as Flow;
-use Neos\Flow\Log\PsrSystemLoggerInterface;
+use Psr\Log\LoggerInterface;
 use Ttree\CrossReference\Domain\Model\Preset;
 
 /**
@@ -14,8 +14,8 @@ use Ttree\CrossReference\Domain\Model\Preset;
 final class MappingService
 {
     /**
-     * @var PsrSystemLoggerInterface
      * @Flow\Inject
+     * @var LoggerInterface
      */
     protected $systemLogger;
 
